@@ -1,0 +1,27 @@
+Alexa Talk to my travel agent
+No
+Can you repeat
+I want to book option One
+Tell me more about option Three
+I want hotels with Fitness Facility
+I want hotels with Free Wifi and Free Parking
+I want a hotel within four hundred dollars
+I would prefer Marriot hotels
+I would prefer FourSeasons or Accor hotels
+I want Three star and above hotels only
+I want hotels between Two and Four star
+I want Three star hotels only
+I want Four star or Five star hotels only
+I am looking for three nights from the next week
+I am looking from the first of december to the third of december
+I am travelling alone
+I am travelling with two adults and a child
+I am travelling with two adults and two children
+I am travelling with two others
+I want to book a hotel in Plano
+i am looking for two nights from fourth of december
+Repeat_Result Can you repeat
+More_About_Hotel I want to book {SelectedHotelOption}
+More_About_Hotel Tell me more about {SelectedHotelOption}
+More_About_Hotel {SelectedHotelOption} looks good to me
+Go_Ahead Go Ahead

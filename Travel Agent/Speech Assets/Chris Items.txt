@@ -1,0 +1,23 @@
+I don’t have edit rights, only view rights so here are my comments. I hope they make sense.
+ 
+Activation intent: Alexa, talk to Chase hotels
+ 
+Alexa says: Hi Chris, how may I help you? To get started you can say things like “I want to book a hotel in Paris”
+ 
+I’m fine with location unless Chris has typical location that Chase uses frequently. McLeod?
+ 
+Number of guests: I like this part
+ 
+Alexa says: Great. When do you want to check in?
+ 
+Chris says: November 1st
+ 
+Alexa says: Great. When do you want to check out?
+ 
+Chris says: November 5th
+ 
+I like the preferences section. Question: is Alexa prompting these preferences from the user or is it just a free form list from Chris?
+ 
+Hotel Options section: it would be great if Alexa could remind Chris that there is free cancelation until 4 days before the stay and ask if he would like to book one of the options. Maybe also prompt him that it can be repeated if he wants.
+ 
+For the booking part: I’d like to do the deep link SMS we spoke about on the phone. Do we need to say anything like “price is good for 24 hours” or “prices can change”?

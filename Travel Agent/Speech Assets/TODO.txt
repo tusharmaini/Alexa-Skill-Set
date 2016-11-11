@@ -1,0 +1,27 @@
+Alexa, ask Elsa
+I want to book a hotel in Paris
+I am travelling alone
+I am looking for two nights from fourth of december
+No Preferences as such
+Tell me more about option one
+Can you repeat
+Tell me more about option two
+Go ahead
+
+----------------------
+todo
+
+Add only needed data in session
+Session based speech outputs - do not repeat
+Room details should be a formatted a sentence 
+Personalization message needs to be added
+Add message - do you want me to remeber this trip
+Give selected room cost instead of starting from price
+Do more deligence on utterences
+Build utterences ground up
+Attach google map API support
+Add chris phone number and email support
+Make a sample deeplink with bitly 
+Chase email tempate
+
+

@@ -1,11 +1,5 @@
 'use strict';
-
-
-/**
- * The key to find the current index from the session attributes
- */
 var KEY_CURRENT_INDEX = "session.sessionId";
-
 var KEY_LOCATION = 'KEY_LOCATION';
 var KEY_CHECKIN = 'KEY_CHECKIN';
 var KEY_CHECKOUT = 'KEY_CHECKOUT';
@@ -20,7 +14,8 @@ var KEY_STAR_RATING_PREFERENCE = 'Star_Rating_Preference';
 var KEY_HOTELS_SPEACH = 'KEY_HOTELS_SPEACH';
 var KEY_HOTELS_OPTION1 = 'KEY_HOTELS_OPTION1';
 var KEY_HOTELS_OPTION2 = 'KEY_HOTELS_OPTION2';
-var KEY_HOTELS_OPTION3 = 'KEY_HOTELS_OPTION3';
+var KEY_HOTELS_OPTION3 = 'KEY_HOTELS_OPTION2';
+var KEY_HOTELS_SELECTED = 'KEY_HOTELS_SELECTED';
 
 var Promise = require('bluebird');
 var moment = require('moment');
@@ -35,12 +30,7 @@ var currency = 'USD';
 var culture = 'en-US';
 var AlexaSkill = require('./AlexaSkill');
 
-/**
- * Use the aws-lib
- */
 var aws = require("aws-lib");
-
-
 var TravelAgent = function () {
     AlexaSkill.call(this, undefined);
 };
@@ -79,7 +69,7 @@ TravelAgent.prototype.intentHandlers = {
         handleDates(intent, session, response);
     },
 
-    "checkin-duration": function (intent, session, response) {
+    "Checkin_Duration": function (intent, session, response) {
         saveCheckInDuration(intent, session, response);
     },
    
@@ -108,6 +98,12 @@ TravelAgent.prototype.intentHandlers = {
     "More_About_Hotel": function (intent, session, response) {
         handleHotelDetails(intent, session, response);
     },
+
+    "Go_Ahead": function (intent, session, response) {
+        handleGoAhead(intent, session, response);
+    },
+
+
     "AMAZON.HelpIntent": function (intent, session, response) {
         helpTheUser(intent, session, response);
     },
@@ -123,9 +119,6 @@ TravelAgent.prototype.intentHandlers = {
     }
 };
 
-/**
- * Returns the welcome response for when a user invokes this skill.
- */
 function getWelcomeResponse(response) {
     var speechText = "",
         repromptText = "",
@@ -153,10 +146,6 @@ function getWelcomeResponse(response) {
     return;
 }
 
-
-/**
- * Store Location details along with lat & long
- */
 function handleLocation(intent, session, response) {
     var speechText = "",
         repromptText = "",
@@ -190,10 +179,6 @@ function handleLocation(intent, session, response) {
 
 }
 
-
-/**
- * Store GuestCount
- */
 function handleNumberOfGuest(intent, session, response) {
     var speechText = "",
         repromptText = "",
@@ -239,10 +224,6 @@ function handleNumberOfGuest(intent, session, response) {
     return;
 }
 
-/**
- * Store Checkin_Checkout_Dates
- */
-
 function handleDates(intent, session, response) {
     var speechText = "",
         repromptText = "",
@@ -255,7 +236,7 @@ function handleDates(intent, session, response) {
     if (checkInDate && checkOutDate) {
         session.attributes[KEY_CHECKIN] = getFormattedDate( new Date(checkInDate));
         session.attributes[KEY_CHECKOUT] = getFormattedDate(new Date(checkOutDate));
-        fireSearch(session).then(function (sessionId) {
+         fireSearch(session).then(function (sessionId) {
 
               if(sessionId){  
                 session.attributes[KEY_SESSIONID] = sessionId;  
@@ -302,33 +283,64 @@ function handleDates(intent, session, response) {
 
 }
 
-/**
- * Store Checkin_Duration
- */
+
+
 function saveCheckInDuration(intent, session, response) {
     var speechText = "",
         repromptText = "",
         speechOutput,
         repromptOutput;
+        var duration = 0;
 
-    var duration = parseInt(intent.slots.Number.value) || parseInt( intent.slots.Date.Duration.value);
+    console.log(JSON.stringify(intent.slots));
+    var duration = parseInt(intent.slots.Number.value) ;
     var checkInDate = intent.slots.Date.value;
      
     session.attributes[KEY_CHECKIN] = getFormattedDate( new Date(checkInDate));
-    session.attributes[KEY_CHECKOUT] = getFormattedDate( getForwardDate(new Date(checkInDate)));
+    console.log(session.attributes[KEY_CHECKIN] );
+    console.log(duration)
+    if(duration == 0)
+        duration = 1;
+    session.attributes[KEY_CHECKOUT] = getFormattedDate( getForwardDate(new Date(checkInDate),duration));
+    console.log(session.attributes[KEY_CHECKOUT] );
+     fireSearch(session).then(function (sessionId) {
 
-      speechText = "<speak> I couldn't pick-up what you said, could you please repeat </speak>";
+              if(sessionId){  
+                session.attributes[KEY_SESSIONID] = sessionId;  
+                speechText = "<speak> Do you have any specific preferences for stay ? Like any specific chain  or some ratings </speak>";
+                speechOutput = {
+                    speech: speechText,
+                    type: AlexaSkill.speechOutputType.SSML
+                }; 
+           
+            response.ask(speechOutput);
+            return;
+        }
+            else{
+                speechText = "<speak> Not able find hotels for you. Sorry !!! </speak>";
+            speechOutput = {
+                speech: speechText,
+                type: AlexaSkill.speechOutputType.SSML               
+            } ;
+                response.ask(speechOutput);
+                return;
+            }
 
-    speechOutput = {
-            speech: speechText,
-            type: AlexaSkill.speechOutputType.SSML
-        };
+        }, function (reason) {
+            speechText = "<speak> Not able find hotels for you. Sorry !!! </speak>";
+            speechOutput = {
+                speech: speechText,
+                type: AlexaSkill.speechOutputType.SSML
+            };
+            response.ask(speechOutput);
+            return;
 
-    response.ask(speechOutput);
+        });
 }
 
 function getForwardDate(fromDate , days){
-    fromDate.setDate(fromDate.getDate() + days); 
+    console.log(fromDate,days);
+   return new Date(fromDate.setDate(fromDate.getDate() + days)); 
 }
 
 function fireSearch(session) {
@@ -347,11 +359,11 @@ function noPreference(intent, session, response) {
     var hotels = getResults(session.attributes[KEY_SESSIONID],null)
     .then(function(result){
 
-        var option1 = "option 1<break time=\"0.5s\" />" + result.hotels[0].name + "<break time=\"0.5s\" />starting form " +Math.ceil(result.hotels[0].fare.totalFare) + " dollars" ;
+        var option1 = "option 1<break time=\"0.5s\" />" + result.hotels[0].name + "<break time=\"0.5s\" />starting from " +Math.ceil(result.hotels[0].fare.totalFare) + " dollars" ;
         session.attributes[KEY_HOTELS_OPTION1] = result.hotels[0];
-        var option2 = "option 2<break time=\"0.5s\" />" + result.hotels[1].name + "<break time=\"0.5s\" />starting form " +Math.ceil(result.hotels[1].fare.totalFare) + " dollars" ;
+        var option2 = "option 2<break time=\"0.5s\" />" + result.hotels[1].name + "<break time=\"0.5s\" />starting from " +Math.ceil(result.hotels[1].fare.totalFare) + " dollars" ;
         session.attributes[KEY_HOTELS_OPTION2] = result.hotels[1];
-        var option3 = "option 3<break time=\"0.5s\" />" + result.hotels[2].name + "<break time=\"0.5s\" />starting form " +Math.ceil(result.hotels[2].fare.totalFare )+ " dollars" ;
+        var option3 = "option 3<break time=\"0.5s\" />" + result.hotels[2].name + "<break time=\"0.5s\" />starting from " +Math.ceil(result.hotels[2].fare.totalFare )+ " dollars" ;
         session.attributes[KEY_HOTELS_OPTION3] = result.hotels[2];
 
         speechText = '<speak> My suggestion for you are,' +
@@ -422,30 +434,22 @@ function handleHotelDetails(intent, session, response){
 
       var selectedOption = intent.slots.SelectedHotelOption.value;
 
-      var hotel;
-      
-    if((selectedOption.indexOf('one') || selectedOption.indexOf('1') > -1))
-    hotel = session.attributes[KEY_HOTELS_OPTION1] ; 
-    
-
-    if((selectedOption.indexOf('two') || selectedOption.indexOf('2') > -1))
-    hotel = session.attributes[KEY_HOTELS_OPTION2] ; 
-
-
-    if((selectedOption.indexOf('three') || selectedOption.indexOf('3') > -1))
-    hotel = session.attributes[KEY_HOTELS_OPTION3] ;        
-      
+      var hotel =  getSelectedHotel(selectedOption,session);     
 
       if(hotel){
 
-          var name = selectedOption +" is , <break time=\"0.5 s\" />" +hotel.name;
-          var room = " where your room would be <break time=\"0.5 s\" />" + hotel.rooms[0].name;
+          session.attributes[KEY_HOTELS_SELECTED] = selectedOption;
+
+          var name = selectedOption +" is , <break time=\"0.5s\" />" +hotel.name;
+          var room = "<break time=\"0.5s\" /> where your room would be <break time=\"0.5s\" />" + hotel.rooms[0].name;
           var bed = '';
-          if(hotel.rooms[0].bedDetails && hotel.rooms[0].bedDetails.desc){
-            bed = " and with <break time=\"0.5 s\" />" + hotel.rooms[0].bedDetails.desc;
+         
+          if(hotel.rooms[0].bedDetails && hotel.rooms[0].bedDetails.length > 0 && hotel.rooms[0].bedDetails[0].desc){
+            bed = "<break time=\"0.5s\" /> and with <break time=\"0.5s\" />" + hotel.rooms[0].bedDetails[0].desc;
             }
-        var price = " This book will cost you approximately " + Math.ceil( hotel.fare.totalFare) + "dollars , inclusive of all government taxes." ;
-          speechText = "<speak> " +name + room + bed+ price +" </speak>";
+        var price = " <break time=\"0.5s\" /> This booking will cost you approximately " + Math.ceil( hotel.fare.totalFare) + " dollars , inclusive of all government taxes." ;
+        var confirmationMessage = "<break time=\"1.0s\" /> Do you like this hotel ? <break time=\"0.5s\" /> To confirm say Go Ahead <break time=\"0.5s\" /> or ask to repeat options."
+          speechText = "<speak> " +name + room + bed+ price + confirmationMessage +" </speak>";
       }
       else{
           speechText = + "<speak> " + selectedOption +" is an incorrect option. Please choose between option one , option two and option 3 </speak>";
@@ -461,6 +465,50 @@ function handleHotelDetails(intent, session, response){
     };
     response.ask(speechOutput, repromptOutput);
     return;
+
+}
+
+function getSelectedHotel(selectedOption,session){
+
+    if((selectedOption.indexOf('one') > -1 ) || (selectedOption.indexOf('1') > -1))
+    return  session.attributes[KEY_HOTELS_OPTION1] ; 
+    
+
+    if((selectedOption.indexOf('two') > -1 ) || ( selectedOption.indexOf('2') > -1))
+    return session.attributes[KEY_HOTELS_OPTION2] ; 
+
+
+    if((selectedOption.indexOf('three') > -1 ) || ( selectedOption.indexOf('3') > -1))
+    return session.attributes[KEY_HOTELS_OPTION3] ;   
+
+    return null;     
+}
+
+function handleGoAhead(intent, session, response){
+    var speechText = "", speechOutput, repromptOutput;
+    speechText = "<speak> Glad to know that you like the hotel" +
+       "<break time=\"0.5s\" /> I have both email and messaged you the hotel details."+
+       "<break time=\"0.5s\" /> do book at your own convenience. Bye ! Have a nice day "+
+        "</speak>";
+
+    var hotel = getSelectedHotel(session.attributes[KEY_HOTELS_SELECTED],session);
+    var textMessage = "To Book " + hotel.name + ", click : HERE";
+    
+    sendSms("+919960936366",textMessage );
+    sendMail("tmaini@tavisca.com","alexatavisca@tavisca.com","Hotel Itinerary : "+ hotel.name,"",textMessage); 
+    
+    
+    var delay=2000; //1 second
+
+setTimeout(function() {
+  speechOutput = {
+        speech: speechText,
+        type: AlexaSkill.speechOutputType.SSML
+    };
+    
+    response.ask(speechOutput, repromptOutput);
+    return;
+}, delay);   
 
 }
 /**
@@ -487,6 +535,7 @@ function saveAmenitiesPreference(intent, session, response) {
         type: AlexaSkill.speechOutputType.SSML
     };
     response.ask(speechOutput, repromptOutput);
+    return;
 
 }
 /**
@@ -919,6 +968,51 @@ function helpTheUser(intent, session, response) {
     };
     response.ask(speechOutput, repromptOutput);
 }
+
+  function sendSms(to, message) {
+    var twilio = require('twilio');
+
+    var client = twilio('*******', '********');
+    client.sendMessage({
+        to: to,
+        from: '+********* ',
+        body: message
+    },function (error, info) {
+       if (error) {
+            console.log(JSON.stringify(error));
+       }
+            console.log('Message sent: ' + info.response);
+   });
+};
+
+ function sendMail(to, from, subject, htmlInput, textInput) {
+    var nodemailer = require("nodemailer");
+    var smtpConfig = {
+        host: 'smtp.gmail.com',
+        port: 465,
+        secure: true,
+        auth: {
+            user: 'alexatavisca@gmail.com',
+            pass: '*********!'
+        }
+    };
+
+    var transporter = nodemailer.createTransport(smtpConfig);
+    var mailOptions = {
+        from: from,
+        to: to,
+        subject: subject,
+        text: textInput,
+        html: htmlInput
+    };
+
+    transporter.sendMail(mailOptions,function (error, info) {
+       if (error) {
+            console.log(JSON.stringify(error));
+       }
+       console.log('Message sent: ' + info.response);
+   });
+};
 
 // Create the handler that responds to the Alexa Request.
 exports.handler = function (event, context) {
